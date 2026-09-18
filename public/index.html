@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roll dice</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        max-width: 28rem;
+        margin: 3rem auto;
+        padding: 0 1rem;
+      }
+      form {
+        display: flex;
+        gap: 0.5rem;
+        align-items: end;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+      }
+      input,
+      button {
+        font: inherit;
+        padding: 0.4rem 0.6rem;
+      }
+      #result {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Roll dice</h1>
+    <form id="roll-form">
+      <label>
+        Number
+        <input id="value" name="value" type="number" required />
+      </label>
+      <button type="submit">Send</button>
+    </form>
+    <p id="result" aria-live="polite"></p>
+    <script>
+      const form = document.getElementById('roll-form');
+      const input = document.getElementById('value');
+      const result = document.getElementById('result');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const value = Number(input.value);
+        const response = await fetch('/rolldice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ value }),
+        });
+        const text = await response.text();
+        result.textContent = response.ok ? `Server received ${text}` : text;
+      });
+    </script>
+  </body>
+</html>
