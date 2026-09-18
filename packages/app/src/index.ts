@@ -1,26 +1,26 @@
 import { Producer, jsonSerializer, stringSerializer } from '@platformatic/kafka';
 import { Counter, register, collectDefaultMetrics } from '@prometheus-io/client';
-import express, { type Express } from 'express';
+import express, { type Express, type Request, type Response } from 'express';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootEnvPath = path.resolve(__dirname, '../../../.env');
+const rootEnvPath = path.resolve(import.meta.dirname, '../../../.env');
 if (existsSync(rootEnvPath)) {
   process.loadEnvFile(rootEnvPath);
 }
 
 const PORT: number = parseInt(process.env['PORT'] || '3000');
-const TOPIC_NAME = process.env['topic-name-rolldice'];
+const topicName = process.env['topic-name-rolldice'];
 const KAFKA_BROKERS = (process.env['KAFKA_BROKERS'] || 'localhost:9092')
   .split(',')
   .map((broker) => broker.trim())
   .filter(Boolean);
 
-if (!TOPIC_NAME) {
+if (!topicName) {
   throw new Error('Missing required env var: topic-name-rolldice');
 }
+
+const TOPIC_NAME: string = topicName;
 
 type RolldiceEvent = {
   event: string;
@@ -28,12 +28,12 @@ type RolldiceEvent = {
 };
 
 const app: Express = express();
-const publicDir = path.join(__dirname, '../public');
+const publicDir = path.join(import.meta.dirname, '../public');
 
 const producer = new Producer({
   clientId: 'rolldice-app',
   bootstrapBrokers: KAFKA_BROKERS,
-  autocreateTopic: true,
+  autocreateTopics: true,
   serializers: {
     key: stringSerializer,
     value: jsonSerializer<RolldiceEvent>,
@@ -51,7 +51,7 @@ const rolldiceCounter = new Counter({
 app.use(express.json());
 app.use(express.static(publicDir));
 
-app.post('/rolldice', async (req, res) => {
+async function handleRolldice(req: Request, res: Response): Promise<void> {
   const raw = req.body.value;
   if (!raw) {
     res.status(400).send('value is required');
@@ -83,6 +83,10 @@ app.post('/rolldice', async (req, res) => {
 
   rolldiceCounter.inc({ value: value.toString() });
   res.send(value.toString());
+}
+
+app.post('/rolldice', (req, res, next) => {
+  void handleRolldice(req, res).catch(next);
 });
 
 app.get('/metrics', async (_req, res) => {

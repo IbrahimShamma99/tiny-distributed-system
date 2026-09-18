@@ -8,7 +8,8 @@
   "author": "",
   "scripts": {
     "start": "pnpm --filter app start",
-    "build": "pnpm --filter app build",
+    "start:consumer": "pnpm --filter consumer start",
+    "build": "pnpm -r build",
     "lint": "oxlint",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
@@ -19,9 +20,18 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@platformatic/kafka": "^2.11.0"
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.80.0",
+    "@opentelemetry/sdk-metrics": "^2.11.0",
+    "@opentelemetry/sdk-node": "^0.222.0",
+    "@opentelemetry/sdk-trace-node": "^2.11.0",
+    "@platformatic/kafka": "^2.11.0",
+    "@prometheus-io/client": "^0.16.1",
+    "express": "^5.2.1"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.4.1",
     "husky": "^9.1.7",
     "oxfmt": "^0.66.0",
     "oxlint": "^1.81.0",
