@@ -15,5 +15,5 @@ pnpm-debug.log*
 Dockerfile
 .dockerignore
 docker-compose*.yml
-prometheus
+infra
 grafana

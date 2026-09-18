@@ -21,7 +21,7 @@ Only the app image is local; Prometheus and Grafana are pulled from public regis
 ## 3. Apply
 
 ```sh
-kubectl apply -k k8s/
+kubectl apply -k infra/k8s/
 kubectl -n tiny-distributed-system get pods -w
 ```
 
@@ -46,5 +46,5 @@ kubectl -n tiny-distributed-system rollout restart deploy/rolldice-app
 ## Tear down
 
 ```sh
-kubectl delete -k k8s/
+kubectl delete -k infra/k8s/
 ```

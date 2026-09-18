@@ -6,8 +6,14 @@ services:
     container_name: rolldice-app
     ports:
       - '3000:3000'
+    env_file:
+      - .env
     environment:
       PORT: '3000'
+      KAFKA_BROKERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
     restart: unless-stopped
 
   prometheus:
@@ -16,7 +22,7 @@ services:
     ports:
       - '9090:9090'
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     restart: unless-stopped
 

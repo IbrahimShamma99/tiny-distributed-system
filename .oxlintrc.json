@@ -19,7 +19,7 @@
   "ignorePatterns": ["dist", "node_modules", "coverage"],
   "overrides": [
     {
-      "files": ["src/instrumentation.ts"],
+      "files": ["packages/app/src/instrumentation.ts"],
       "rules": {
         "import/no-unassigned-import": "off"
       }

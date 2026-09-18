@@ -24,6 +24,10 @@ spec:
           env:
             - name: PORT
               value: '3000'
+            - name: topic-name-rolldice
+              value: rolldice
+            - name: KAFKA_BROKERS
+              value: kafka:9092
           readinessProbe:
             httpGet:
               path: /
