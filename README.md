@@ -1,50 +1,78 @@
-## Otel basics
+## Tiny Distributed system
 
-This project is a tiny two services that communicate between them async (kafka) as well as some config around observability
+This project is a tiny two services that communicate between them async (kafka) as well as some config around observability.
 
-## Local cluster system of a choice
+The name inspred by https://github.com/jamiebuilds/the-super-tiny-compiler
 
-- **kind**: `brew install kind` then `kind create cluster --name tiny-distributed-system`
+### monorepos
 
-## 1. Build the app image
+Two Node.js services in a pnpm workspace:
 
-```sh
-docker build -t rolldice-app:local .
-```
+- `packages/app` — HTTP producer. Exposes `POST /rolldice` and publishes a JSON event to Kafka.
+- `packages/consumer` — Kafka consumer. Reads events and persists them to Postgres.
 
-## 2. Make the image available to the cluster
+Both services expose `/metrics` (Prometheus) and are instrumented with OpenTelemetry auto-instrumentations (`src/instrumentation.ts`).
 
-Only the app image is local; Prometheus and Grafana are pulled from public registries.
+### Stack
 
-`kind load docker-image rolldice-app:local --name tiny-distributed-system`
+- Node.js ≥ 24 (native TS execution via `--import`)
+- pnpm workspaces
+- Kafka (KRaft mode, `apache/kafka:4.1.0`) via [`@platformatic/kafka`](https://github.com/platformatic/kafka)
+- Postgres 17
+- Prometheus + Grafana
+- OpenTelemetry SDK Node
+- oxlint / oxfmt
 
-## 3. Apply
+### Prerequisites
 
-```sh
-kubectl apply -k infra/k8s/
-kubectl -n tiny-distributed-system get pods -w
-```
+- Node.js ≥ 24
+- pnpm ≥ 11
+- Docker + Docker Compose
+- (Optional) `kubectl` + a local cluster for the k8s manifests
 
-## 4. Access the services
-
-```sh
-kubectl -n tiny-distributed-system port-forward svc/app 3000:3000
-kubectl -n tiny-distributed-system port-forward svc/prometheus 9090:9090
-kubectl -n tiny-distributed-system port-forward svc/grafana 3001:3000
-```
-
-Grafana login: `admin` / `admin`.
-
-## Update the app after a code change
+### Quick start
 
 ```sh
-docker build -t rolldice-app:local .
-kind load docker-image rolldice-app:local --name tiny-distributed-system
-kubectl -n tiny-distributed-system rollout restart deploy/rolldice-app
+pnpm install
+cp .env.example .env
+docker compose up -d
+pnpm --filter app start
+pnpm --filter consumer start
 ```
 
-## Tear down
+Trigger an event:
 
 ```sh
-kubectl delete -k infra/k8s/
+curl -X POST http://localhost:3000/rolldice \
+  -H 'content-type: application/json' \
+  -d '{"value": 4}'
 ```
+
+### Kafka topic
+
+`rolldice` is auto-created by the `kafka-init` service in Compose (1 partition, replication factor 1). Message shape:
+
+```json
+{ "event": "rolldice", "value": 4 }
+```
+
+### Postgres schema
+
+Created by `postgres-init` on boot:
+
+```sql
+CREATE DATABASE consumer;
+CREATE TABLE IF NOT EXISTS rolldice (
+  id SERIAL PRIMARY KEY,
+  value INTEGER NOT NULL
+);
+```
+
+### Observability
+
+- Both services call `collectDefaultMetrics()` and expose custom counters:
+  - app: `rolldice_requests_total{value}`
+  - consumer: `rolldice_events_consumed_total{value}`
+- Prometheus config: [infra/prometheus/prometheus.yml](infra/prometheus/prometheus.yml) — scrapes `host.docker.internal:3000` and `:3001` every 5s.
+- Grafana provisioning: [grafana/provisioning](grafana/provisioning).
+- Tracing/metrics via OpenTelemetry are wired in each service's `src/instrumentation.ts` and loaded with `node --import`.
