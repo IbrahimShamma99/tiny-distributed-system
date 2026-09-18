@@ -119,6 +119,12 @@ services:
       - |
         psql -h postgres -U admin -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'consumer'" | grep -q 1 \
           || psql -h postgres -U admin -d postgres -c "CREATE DATABASE consumer"
+        psql -h postgres -U admin -d consumer -c "
+          CREATE TABLE IF NOT EXISTS rolldice (
+            id SERIAL PRIMARY KEY,
+            value INTEGER NOT NULL
+          );
+        "
     restart: 'no'
 
 volumes:
