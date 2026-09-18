@@ -1,10 +1,10 @@
 ## Otel basics
 
-This is a service that acts into how I want to build things moving forward
+This project is a tiny two services that communicate between them async (kafka) as well as some config around observability
 
 ## Local cluster system of a choice
 
-- **kind**: `brew install kind` then `kind create cluster --name otel-basics`
+- **kind**: `brew install kind` then `kind create cluster --name tiny-distributed-system`
 
 ## 1. Build the app image
 
@@ -16,21 +16,21 @@ docker build -t rolldice-app:local .
 
 Only the app image is local; Prometheus and Grafana are pulled from public registries.
 
-`kind load docker-image rolldice-app:local --name otel-basics`
+`kind load docker-image rolldice-app:local --name tiny-distributed-system`
 
 ## 3. Apply
 
 ```sh
 kubectl apply -k k8s/
-kubectl -n otel-basics get pods -w
+kubectl -n tiny-distributed-system get pods -w
 ```
 
 ## 4. Access the services
 
 ```sh
-kubectl -n otel-basics port-forward svc/app 3000:3000
-kubectl -n otel-basics port-forward svc/prometheus 9090:9090
-kubectl -n otel-basics port-forward svc/grafana 3001:3000
+kubectl -n tiny-distributed-system port-forward svc/app 3000:3000
+kubectl -n tiny-distributed-system port-forward svc/prometheus 9090:9090
+kubectl -n tiny-distributed-system port-forward svc/grafana 3001:3000
 ```
 
 Grafana login: `admin` / `admin`.
@@ -39,8 +39,8 @@ Grafana login: `admin` / `admin`.
 
 ```sh
 docker build -t rolldice-app:local .
-kind load docker-image rolldice-app:local --name otel-basics
-kubectl -n otel-basics rollout restart deploy/rolldice-app
+kind load docker-image rolldice-app:local --name tiny-distributed-system
+kubectl -n tiny-distributed-system rollout restart deploy/rolldice-app
 ```
 
 ## Tear down
