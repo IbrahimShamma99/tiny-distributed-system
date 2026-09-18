@@ -79,4 +79,4 @@ CREATE TABLE IF NOT EXISTS rolldice (
 
 ### TODO
 
-- [] Configure consumer pod
+- [ ] Configure consumer pod
