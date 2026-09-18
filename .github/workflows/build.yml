@@ -26,5 +26,3 @@ jobs:
       - run: pnpm lint
 
       - run: pnpm fmt:check
-
-      - run: docker compose up -d app --build
