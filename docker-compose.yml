@@ -1,26 +1,11 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: rolldice-app
-    ports:
-      - '3000:3000'
-    env_file:
-      - .env
-    environment:
-      PORT: '3000'
-      KAFKA_BROKERS: kafka:29092
-    depends_on:
-      kafka:
-        condition: service_healthy
-    restart: unless-stopped
-
   prometheus:
     image: prom/prometheus:v3.14.0
     container_name: prometheus
     ports:
       - '9090:9090'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -30,7 +15,7 @@ services:
     image: grafana/grafana:13.0.8
     container_name: grafana
     ports:
-      - '3001:3000'
+      - '3002:3000'
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -75,8 +60,22 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  kafka-init:
+    image: apache/kafka:4.1.0
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 \
+          --create --if-not-exists --topic rolldice --partitions 1 --replication-factor 1
+    restart: 'no'
+
   kafbat:
-    image: ghcr.io/kafbat/kafka-ui:v1.3.1
+    image: ghcr.io/kafbat/kafka-ui:latest
     container_name: kafbat
     ports:
       - '8080:8080'
@@ -89,7 +88,43 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U admin -d postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  postgres-init:
+    image: postgres:17-alpine
+    container_name: postgres-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: admin
+    entrypoint:
+      - sh
+      - -c
+      - |
+        psql -h postgres -U admin -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'consumer'" | grep -q 1 \
+          || psql -h postgres -U admin -d postgres -c "CREATE DATABASE consumer"
+    restart: 'no'
+
 volumes:
   grafana-data:
   prometheus-data:
   kafka-data:
+  postgres-data:

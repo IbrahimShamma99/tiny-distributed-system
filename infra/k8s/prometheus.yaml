@@ -10,8 +10,11 @@ data:
 
     scrape_configs:
       - job_name: rolldice
+        metrics_path: /metrics
         static_configs:
-          - targets: ['app:3000']
+          - targets: ['app:3000', 'consumer:3001']
+            labels:
+              service: rolldice
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
