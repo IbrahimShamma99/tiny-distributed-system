@@ -76,3 +76,7 @@ CREATE TABLE IF NOT EXISTS rolldice (
 - Prometheus config: [infra/prometheus/prometheus.yml](infra/prometheus/prometheus.yml) — scrapes `host.docker.internal:3000` and `:3001` every 5s.
 - Grafana provisioning: [grafana/provisioning](grafana/provisioning).
 - Tracing/metrics via OpenTelemetry are wired in each service's `src/instrumentation.ts` and loaded with `node --import`.
+
+### TODO
+
+[] Configure consumer pod
